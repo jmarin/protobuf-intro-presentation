@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>Introduction to Protocol Buffers</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
 		<link rel="stylesheet" href="css/theme/black.css">
@@ -24,8 +24,116 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section>
+					<h1>Protocol Buffers</h1>
+					<h3>Serializing Structured Data</h3>
+				</section>
+				<section>
+					<h4>What is a Protocol Buffer?</h4>
+					<p><i>
+					"Protocol buffers are Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but smaller, faster, and simpler"
+					</i></p>	
+				</section>
+				<section>
+					<h3>Important: Structured Data</h3>
+				</section>	
+				<section>
+					<h4>Some advantages</h4>
+					<ul>
+						<li>Very small size</li>
+						<li>Very fast processing</li>
+						<li>Typed messages (safety)</li>
+						<li>Schema Evolution (forward compatibility)</li>
+						<li>Language / Platform agnostic</li>
+					</ul>
+				</section>
+				<section>
+					<h4>Some limitations</h4>
+					<ul>
+						<li>Not human readable / editable</li>
+						<li>Hard to parse without knowing the schema</li>
+						<li>Protobuf doesn't prescribe how to do streaming</li>
+					</ul>
+				</section>
+				<section>
+					<h4>Example</h4>
+					<pre><code>
+message Person {
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+}
+					</code></pre>
+				</section>
+				<section>
+					<h4>Google provided initial official support for Java, C++ and Python</h4>
+					<h4>More languages followed in time. Most major programming languages are supported</h4>
+				</section>
+				<section>
+					<h4>What this means is that you define your data structures in Protobuf format, and automatically generate code in your language of choice</h4>
+					<h4>This is done with the Protocol Buffers Compiler, <i>protoc</i></h4>
+				</section>
+				<section>
+					<p>On a Mac, install with <i>brew install protobuf</i>
+					<img src="images/protoc.png"></img>
+					<pre><code>protoc -I=protobuf --java_out=java/protobuf/src/main/java protobuf/addressbook.proto</code></pre>
+				</section>
+				<section>
+					<h1>DEMO</h1>
+				</section>
+				<section>
+					<h2>Using Protocol Buffers in Akka applications</h2>
+				</section>
+				<section>
+					<h3>The problem with Java Serialization</h3>
+					<ul>
+						<li>It's actually kind of big and clunky by today's standards</li>
+						<li><b>Security</b>: You just can't trust a stream of data serialized this way</li>
+						<li>Everyone's favorite: Performance!. It's actually not very fast</li>
+						<li>In Scala, storing data with Java Serialization might break applications that migrate to next major version of Scala</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Akka uses Java Serialization by default</h2>
+					<p>This is not a big problem if your application is local (not clustered) and you are not using Akka Persistence</p>
+				</section>
+				<section>
+					<h3>Akka Serialization mechanism is extensible</h3>
+					<p>Several options available (protobuf, Kryo, roll your own...)</p>
+				</section>
+				<section>
+					<h4>In an event sourced system, schema evolution is a huge problem</h4>
+					<p>How do we change our data schema, while maintaining the ability to read old messages stored in the journal?</p>
+					<p>Protocol Buffers is a format that offers that capability</p>
+				</section>
+				<section>
+					<h3>Main idea: separate the domain object model from its serialized representation</h3>
+				</section>
+				<section>
+					<img src="images/akka-protobuf.png"></img>
+				</section>
+				<section>
+					<h4>Akka Serialization Configuration</h4>
+					<pre><code>
+akka {
+  actor {
+    serializers {
+      java = "akka.serialization.JavaSerializer"
+      proto = "akka.remote.serialization.ProtobufSerializer"
+      myown = "docs.serialization.MyOwnSerializer"
+    }
+    serialization-bindings {
+      "java.lang.String" = java
+      "docs.serialization.Customer" = java
+      "com.google.protobuf.Message" = proto
+      "docs.serialization.MyOwnSerializable" = myown
+      "java.lang.Boolean" = myown
+    }		
+  }
+}
+					</code></pre>
+				</section>
+
 			</div>
 		</div>
 
